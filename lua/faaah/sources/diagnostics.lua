@@ -40,12 +40,13 @@ function M.attach(source_config)
 
   augroup = vim.api.nvim_create_augroup("faaah_diagnostics", { clear = true })
 
-  vim.api.nvim_create_autocmd("DiagnosticChanged", {
+  vim.api.nvim_create_autocmd("User", {
+    pattern = "DiagnosticChanged",
     group = augroup,
     callback = function(ev)
-      if not ctrl.is_enabled() then
-        return
-      end
+        if not ctrl or not ctrl.is_enabled() then
+          return
+        end
 
       -- Count current ERROR diagnostics for this buffer
       local new_count = count_errors(ev.data.diagnostics or {})

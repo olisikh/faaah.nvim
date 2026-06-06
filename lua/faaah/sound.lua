@@ -53,8 +53,8 @@ local function resolve_sound_path(user_path)
   local source = debug.getinfo(1, "S").source
   -- source format: @/path/to/lua/faaah/sound.lua
   local sound_lua_path = source:sub(2) -- strip leading @
-  -- Walk up: sound.lua -> faaah -> lua -> plugin_root
-  local plugin_root = vim.fn.fnamemodify(sound_lua_path, ":h:h:h:h")
+  -- Walk up: sound.lua -> faaah -> lua -> plugin_root (3 levels)
+  local plugin_root = vim.fn.fnamemodify(sound_lua_path, ":h:h:h")
   local default_path = vim.fn.resolve(plugin_root .. "/sounds/default.mp3")
 
   if vim.fn.filereadable(default_path) == 1 then
@@ -83,6 +83,10 @@ function M.play(path, play_cmd)
 
   local resolved = resolve_sound_path(path)
   if not resolved then
+    vim.notify(
+      "faaah.nvim: could not resolve sound path" .. (path and (" for: " .. path) or ""),
+      vim.log.levels.WARN
+    )
     return false
   end
 

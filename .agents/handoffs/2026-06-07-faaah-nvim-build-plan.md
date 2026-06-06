@@ -1,6 +1,7 @@
-# Handoff: faaah.nvim — Build Phase
+# Handoff: faaah.nvim — Build Phase ✅ COMPLETE
 
 **Date:** 2026-06-07
+**Completed:** 2026-06-07
 **Context:** Neovim plugin that plays a funny error sound (2s MP3 clip) when errors occur — diagnostics, neotest test failures, vim.notify errors. One plugin, require("faaah").setup(), configurable per source, configurable sound, configurable throttle.
 
 ## What Was Decided (Grilled Plan)
@@ -178,6 +179,35 @@ Config is a frozen snapshot after `setup()`. Runtime changes via `enable()`/`dis
 - Diagnostics: ERROR severity only, configurable later.
 - Notifications: accept false positives, document them.
 - "Document edge cases and tradeoffs extensively."
+
+## Implementation Notes (2026-06-07)
+
+All 8 build steps completed. All user constraints satisfied.
+
+### Deviations from Plan
+
+| Planned | Implemented | Reason |
+|---------|-------------|--------|
+| `__pairs` metamethod for readonly config proxy | Removed | LuaJIT 5.1 (Neovim) doesn't support `__pairs`. Proxy still blocks writes via `__newindex`; iterating with `pairs()` yields nothing — acceptable for frozen config. |
+| `os.time()` for throttle | `vim.loop.now()` for ms precision | More accurate throttling. |
+| Callback silent on success | Logs WARN on non-zero exit code/signal | Useful for debugging audio backend issues. |
+| `select(2, unpack(built))` args extraction | Kept as-is | Works correctly in LuaJIT. |
+
+### Implementation Details Worth Noting
+
+- **Config readonly proxy:** Each table (defaults, per-source configs, top-level) wrapped in separate proxy with `__index` forwarding to real table and `__newindex` throwing. Re-run `setup()` to change.
+- **Throttle:** Per-source, ms-precision via `vim.loop.now()`. State persists across `enable()`/`disable()` toggles — only resets on `detach()`/`setup()`.
+- **Sound default resolution:** Uses `debug.getinfo(1, "S").source` from `sound.lua` to walk up to plugin root, then `sounds/default.mp3`. Falls back to user-provided path or `vim.fn.expand()`.
+- **neotest consumer:** Uses `vim.tbl_deep_extend("force", ...)` for metatable-safe consumer merging. `manual_attach()` is best-effort — cannot retroactively inject into already-initialized neotest client.
+- **notifications chain:** Original `vim.notify` saved before replacement. Wrapper calls original first, then checks throttle/play. Other plugins wrapping `vim.notify` will wrap faaah's wrapper (or vice versa depending on load order) — chain always preserved.
+- **diagnostics count tracking:** Per-buffer error count stored in `table<integer, integer>`. Accumulates for deleted buffers (minor leak) — acceptable for v1. Resets on `detach()`.
+
+### Next Steps
+
+- **Test:** Load plugin in Neovim, trigger diagnostics/neotest failures/`vim.notify` errors. Verify sounds play with correct throttle.
+- **Commit:** Use `caveman-commit` skill for conventional commits.
+- **Review:** Run `autoreview` skill before final commit.
+- **v2 candidates:** Configurable severity filter for diagnostics, `ignore_patterns` for notifications, Windows support.
 
 ### Suggested Skills for Next Agent
 
