@@ -14,6 +14,10 @@ local ctrl = nil
 ---@type table<integer, integer> bufnr -> error count
 local buf_error_counts = {}
 
+---Per-buffer initialization state. Prevent firing on first diagnostic load.
+---@type table<integer, boolean>
+local buf_initialized = {}
+
 ---@type integer|nil autocommand group id
 local augroup = nil
 
@@ -55,6 +59,21 @@ function M.attach(source_config)
         end
 
       local bufnr = ev.buf
+
+      -- Seed baseline on first event without triggering sound.
+      -- Prevents firing on initial buffer load or entering Insert mode.
+      if not buf_initialized[bufnr] then
+        buf_error_counts[bufnr] = new_count
+        buf_initialized[bufnr] = true
+        return
+      end
+
+      -- Don't play sound while actively editing in Insert mode.
+      -- Sound will fire on next DiagnosticChanged after returning to Normal mode.
+      if vim.api.nvim_get_mode().mode == "i" then
+        return
+      end
+
       local old_count = buf_error_counts[bufnr] or 0
 
       -- Only trigger if error count increased
@@ -80,6 +99,7 @@ function M.detach()
     augroup = nil
   end
   buf_error_counts = {}
+  buf_initialized = {}
   config = nil
   ctrl = nil
 end
