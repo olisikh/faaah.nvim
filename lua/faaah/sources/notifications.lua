@@ -38,6 +38,8 @@ end
 ---Attach by wrapping vim.notify.
 ---@param source_config table merged source config { sound, throttle_ms, enabled }
 function M.attach(source_config)
+  M.detach()
+
   config = source_config
   ctrl = throttle.source_controller(source_config.enabled)
 

@@ -1,5 +1,6 @@
 local config_mod = require("faaah.config")
 local sound = require("faaah.sound")
+local log = require("faaah.log")
 
 local M = {}
 
@@ -47,7 +48,7 @@ function M.setup(user_opts)
 		end
 	end
 
-	vim.notify("faaah.nvim: setup complete. Sources: " .. table.concat(enabled_sources, ", "), vim.log.levels.INFO)
+	log.info("setup complete. Sources: " .. table.concat(enabled_sources, ", "))
 end
 
 ---Get the runtime controller for a source (enable/disable/is_enabled).
@@ -56,13 +57,13 @@ end
 function M.source(name)
 	local mod = source_modules[name]
 	if not mod then
-		vim.notify("faaah.nvim: unknown source: " .. name, vim.log.levels.ERROR)
+		log.error("unknown source: " .. name)
 		return nil
 	end
 
 	local ctrl = mod.controller()
 	if not ctrl then
-		vim.notify("faaah.nvim: source '" .. name .. "' not attached. Run setup() first.", vim.log.levels.WARN)
+		log.warn("source '" .. name .. "' not attached. Run setup() first.")
 		return nil
 	end
 
@@ -72,6 +73,10 @@ end
 ---Raw source modules for advanced use (e.g. manual_attach).
 ---@type table<string, table>
 M.sources = source_modules
+
+---Logger module (set_level, set_path).
+---@type table
+M.log = log
 
 ---Play a sound manually.
 ---Uses the configured play_cmd from setup() if set, otherwise auto-detect.
@@ -84,7 +89,7 @@ function M.play(path)
 	if not resolved_path then
 		resolved_path = sound.default_sound_path()
 		if not resolved_path then
-			vim.notify("faaah.nvim: no sound path configured and default not found", vim.log.levels.ERROR)
+			log.error("no sound path configured and default not found")
 			return
 		end
 	end

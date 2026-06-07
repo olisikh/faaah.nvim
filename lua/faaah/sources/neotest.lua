@@ -1,5 +1,6 @@
 local throttle = require("faaah.sources")
 local sound = require("faaah.sound")
+local log = require("faaah.log")
 
 local M = {}
 
@@ -66,12 +67,14 @@ end
 ---Wrap neotest.setup to inject the faaah consumer.
 ---@param source_config table merged source config { sound, throttle_ms, enabled }
 function M.attach(source_config)
+  M.detach()
+
   config = source_config
   ctrl = throttle.source_controller(source_config.enabled)
 
   local ok, neotest = pcall(require, "neotest")
   if not ok then
-    vim.notify("faaah.nvim: neotest not found, source disabled", vim.log.levels.WARN)
+    log.warn("neotest not found, source disabled")
     neotest_available = false
     return
   end
@@ -102,7 +105,7 @@ function M.manual_attach()
   if not neotest_available then
     local ok, _ = pcall(require, "neotest")
     if not ok then
-      vim.notify("faaah.nvim: neotest not available for manual attach", vim.log.levels.ERROR)
+      log.error("neotest not available for manual attach")
       return
     end
     neotest_available = true
@@ -116,11 +119,7 @@ function M.manual_attach()
 
   -- neotest client may already be initialized. Try to use neotest.run.runner
   -- or similar internal API. Best-effort.
-  vim.notify(
-    "faaah.nvim: manual_attach for neotest is best-effort. "
-      .. "Prefer loading faaah before neotest.setup().",
-    vim.log.levels.WARN
-  )
+  log.warn("manual_attach for neotest is best-effort. Prefer loading faaah before neotest.setup().")
 end
 
 ---Restore original neotest.setup.

@@ -1,5 +1,7 @@
 local M = {}
 
+local log = require("faaah.log")
+
 local defaults = {
   defaults = {
     sound = nil,
@@ -82,7 +84,7 @@ function M.resolve(user_opts)
 
   local err = validate(opts)
   if err then
-    vim.notify("faaah.nvim: " .. err, vim.log.levels.ERROR)
+    log.error(err)
     return nil
   end
 

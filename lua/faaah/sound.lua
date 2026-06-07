@@ -1,5 +1,7 @@
 local M = {}
 
+local log = require("faaah.log")
+
 ---@type string|nil cached backend command (without %s)
 local backend = nil
 
@@ -32,7 +34,7 @@ local function build_cmd(backend_name, sound_path)
   elseif backend_name == "mpv" then
     return { "mpv", "--no-video", "--really-quiet", sound_path }
   else
-    vim.notify("faaah.nvim: unknown backend: " .. backend_name, vim.log.levels.ERROR)
+    log.error("unknown backend: " .. backend_name)
     return nil
   end
 end
@@ -61,7 +63,7 @@ local function resolve_sound_path(user_path)
     return default_path
   end
 
-  vim.notify("faaah.nvim: bundled sound not found at " .. default_path, vim.log.levels.WARN)
+  log.warn("bundled sound not found at " .. default_path)
   return nil
 end
 
@@ -73,20 +75,14 @@ function M.play(path, play_cmd)
   if not backend then
     backend = detect_backend()
     if not backend then
-      vim.notify(
-        "faaah.nvim: no audio backend found. Install ffplay or mpv.",
-        vim.log.levels.ERROR
-      )
+      log.error("no audio backend found. Install ffplay or mpv.")
       return false
     end
   end
 
   local resolved = resolve_sound_path(path)
   if not resolved then
-    vim.notify(
-      "faaah.nvim: could not resolve sound path" .. (path and (" for: " .. path) or ""),
-      vim.log.levels.WARN
-    )
+    log.warn("could not resolve sound path" .. (path and (" for: " .. path) or ""))
     return false
   end
 
@@ -121,10 +117,7 @@ function M.play(path, play_cmd)
     stdio = { nil, nil, nil },
   }, function(code, signal)
     if code ~= 0 or signal ~= 0 then
-      vim.notify(
-        "faaah.nvim: audio process exited with code=" .. tostring(code) .. " signal=" .. tostring(signal),
-        vim.log.levels.WARN
-      )
+      log.warn("audio process exited with code=" .. tostring(code) .. " signal=" .. tostring(signal))
     end
     if handle and not handle:is_closing() then
       handle:close()
@@ -132,10 +125,7 @@ function M.play(path, play_cmd)
   end)
 
   if not handle then
-    vim.notify(
-      "faaah.nvim: failed to spawn " .. cmd .. ": " .. (spawn_err or "unknown error"),
-      vim.log.levels.ERROR
-    )
+    log.error("failed to spawn " .. cmd .. ": " .. (spawn_err or "unknown error"))
     return false
   end
 

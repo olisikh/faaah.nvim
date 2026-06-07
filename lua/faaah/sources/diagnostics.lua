@@ -1,5 +1,6 @@
 local throttle = require("faaah.sources")
 local sound = require("faaah.sound")
+local log = require("faaah.log")
 
 local M = {}
 
@@ -32,31 +33,38 @@ end
 ---Start listening to DiagnosticChanged events.
 ---@param source_config table merged source config { sound, throttle_ms, enabled }
 function M.attach(source_config)
-  config = source_config
-  ctrl = throttle.source_controller(source_config.enabled)
-
   -- Clear previous state in case of re-attach
   M.detach()
 
+  config = source_config
+  ctrl = throttle.source_controller(source_config.enabled)
+
   augroup = vim.api.nvim_create_augroup("faaah_diagnostics", { clear = true })
 
-  vim.api.nvim_create_autocmd("User", {
-    pattern = "DiagnosticChanged",
+  vim.api.nvim_create_autocmd("DiagnosticChanged", {
     group = augroup,
     callback = function(ev)
+        -- DEBUG: verify autocmd fires
+        local new_count = count_errors(ev.data.diagnostics or {})
+        local total = ev.data.diagnostics and #ev.data.diagnostics or 0
+        log.debug("buf=" .. ev.buf .. " total=" .. total .. " errors=" .. new_count)
+
         if not ctrl or not ctrl.is_enabled() then
+          log.warn("source disabled or ctrl nil")
           return
         end
 
-      -- Count current ERROR diagnostics for this buffer
-      local new_count = count_errors(ev.data.diagnostics or {})
       local bufnr = ev.buf
       local old_count = buf_error_counts[bufnr] or 0
 
       -- Only trigger if error count increased
       if new_count > old_count then
+        log.debug("increase " .. old_count .. "->" .. new_count .. " throttle=" .. config.throttle_ms)
         if throttle.check("diagnostics", config.throttle_ms) then
+          log.debug("playing sound: " .. tostring(config.sound or "default"))
           sound.play(config.sound)
+        else
+          log.debug("throttled")
         end
       end
 
