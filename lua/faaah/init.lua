@@ -49,6 +49,35 @@ function M.setup(user_opts)
 	end
 
 	log.info("setup complete. Sources: " .. table.concat(enabled_sources, ", "))
+
+	-- Register user commands
+	local function faaah_cmd(args)
+		local sub = args.args
+		if sub == "enable" then
+			M.enable()
+		elseif sub == "disable" then
+			M.disable()
+		elseif sub == "toggle" then
+			if M.is_enabled() then
+				M.disable()
+			else
+				M.enable()
+			end
+		elseif sub == "play" then
+			M.play()
+		else
+			log.warn("unknown command: " .. tostring(sub) .. ". Valid: enable, disable, toggle, play")
+		end
+	end
+
+	vim.api.nvim_create_user_command("Faah", faaah_cmd, {
+		nargs = "?",
+		complete = function()
+			return { "enable", "disable", "toggle", "play" }
+		end,
+		desc = "faaah.nvim: control error sounds (enable/disable/toggle/play)",
+		force = true,
+	})
 end
 
 ---Get the runtime controller for a source (enable/disable/is_enabled).
@@ -68,6 +97,50 @@ function M.source(name)
 	end
 
 	return ctrl
+end
+
+---@type table<string, boolean>|nil saved enabled states for global re-enable
+local _saved_enabled = nil
+
+---Disable all sources globally (mute).
+---Remembers which sources were enabled so enable() can restore.
+function M.disable()
+  if _saved_enabled then
+    return -- already disabled
+  end
+  _saved_enabled = {}
+  for name, mod in pairs(source_modules) do
+    local ctrl = mod.controller()
+    if ctrl and ctrl.is_enabled() then
+      _saved_enabled[name] = true
+      ctrl.disable()
+    end
+  end
+  log.info("disabled globally")
+end
+
+---Re-enable all sources that were active before disable().
+function M.enable()
+  if not _saved_enabled then
+    return -- not disabled
+  end
+  for name, _ in pairs(_saved_enabled) do
+    local mod = source_modules[name]
+    if mod then
+      local ctrl = mod.controller()
+      if ctrl then
+        ctrl.enable()
+      end
+    end
+  end
+  _saved_enabled = nil
+  log.info("enabled globally")
+end
+
+---Check whether the plugin is globally enabled (not muted).
+---@return boolean
+function M.is_enabled()
+  return _saved_enabled == nil
 end
 
 ---Raw source modules for advanced use (e.g. manual_attach).
