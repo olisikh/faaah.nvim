@@ -70,7 +70,7 @@ function M.setup(user_opts)
 		end
 	end
 
-	vim.api.nvim_create_user_command("Faah", faaah_cmd, {
+	vim.api.nvim_create_user_command("Faaah", faaah_cmd, {
 		nargs = "?",
 		complete = function()
 			return { "enable", "disable", "toggle", "play" }
