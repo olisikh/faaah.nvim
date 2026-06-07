@@ -275,17 +275,20 @@ Or set to `0` for maximum cacophony — your choice.
 Verify load order: `faaah.setup()` before `neotest.setup()`. If that's impossible, call `manual_attach()` after both are loaded.
 
 **Debug logging:**
-Enable verbose logging to file to trace autocmd events, throttle decisions, and sound playback:
+All logging goes to file. Enable verbose output to trace autocmd events, throttle decisions, and sound playback:
 
 ```lua
 require("faaah").log.set_level("debug")
 ```
 
-Log file is at `:echo stdpath("data") .. "/faaah.log"` (usually `~/.local/share/nvim/faaah.log`). Debug messages go to file only (no editor noise). Set back to `"info"` when done.
+Log file: `:echo stdpath("data") .. "/faaah.log"` (usually `~/.local/share/nvim/faaah.log`). Set back to `"info"` when done.
 
 ```lua
 -- Change log file location
 require("faaah").log.set_path("~/faaah-debug.log")
+
+-- Tail the log from another terminal
+-- $ tail -f ~/.local/share/nvim/faaah.log
 ```
 
 ## License

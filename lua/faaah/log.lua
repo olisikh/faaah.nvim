@@ -65,7 +65,7 @@ local function write_entry(level_name, msg)
   vim.loop.fs_close(fd)
 end
 
----Log a debug message (file only, no in-editor noise).
+---Log a debug message.
 ---@param msg string
 function M.debug(msg)
   if current_level <= LEVELS.debug then
@@ -73,29 +73,26 @@ function M.debug(msg)
   end
 end
 
----Log an info message (file only).
+---Log an info message.
 ---@param msg string
 function M.info(msg)
   if current_level <= LEVELS.info then
     write_entry("info", msg)
-    vim.notify("faaah: " .. msg, vim.log.levels.INFO)
   end
 end
 
----Log a warning message (file + in-editor notification).
+---Log a warning message.
 ---@param msg string
 function M.warn(msg)
   if current_level <= LEVELS.warn then
     write_entry("warn", msg)
-    vim.notify("faaah: " .. msg, vim.log.levels.WARN)
   end
 end
 
----Log an error message (file + in-editor notification, always shown).
+---Log an error message (always written to file).
 ---@param msg string
 function M.error(msg)
   write_entry("error", msg)
-  vim.notify("faaah: " .. msg, vim.log.levels.ERROR)
 end
 
 return M
