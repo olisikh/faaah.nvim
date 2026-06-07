@@ -48,15 +48,15 @@ function M.attach(source_config)
   vim.api.nvim_create_autocmd("DiagnosticChanged", {
     group = augroup,
     callback = function(ev)
-        -- DEBUG: verify autocmd fires
-        local new_count = count_errors(ev.data.diagnostics or {})
-        local total = ev.data.diagnostics and #ev.data.diagnostics or 0
-        log.debug("buf=" .. ev.buf .. " total=" .. total .. " errors=" .. new_count)
+      -- DEBUG: verify autocmd fires
+      local new_count = count_errors(ev.data.diagnostics or {})
+      local total = ev.data.diagnostics and #ev.data.diagnostics or 0
+      log.debug("buf=" .. ev.buf .. " total=" .. total .. " errors=" .. new_count)
 
-        if not ctrl or not ctrl.is_enabled() then
-          log.warn("source disabled or ctrl nil")
-          return
-        end
+      if not ctrl or not ctrl.is_enabled() then
+        log.warn("source disabled or ctrl nil")
+        return
+      end
 
       local bufnr = ev.buf
 
