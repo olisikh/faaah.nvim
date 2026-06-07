@@ -79,6 +79,42 @@ sources = {
 }
 ```
 
+### Default Configuration
+
+Calling `require("faaah").setup()` with no arguments uses these defaults:
+
+```lua
+{
+  defaults = {
+    sound = nil,         -- nil = use bundled sounds/default.mp3
+    throttle_ms = 2000,  -- 2 second cooldown between sounds per source
+  },
+  sources = {
+    diagnostics   = { enabled = true },
+    neotest       = { enabled = true },
+    notifications = { enabled = true },
+  },
+  play_cmd = nil,  -- nil = auto-detect (afplay/ffplay/mpv)
+}
+```
+
+## Commands
+
+After `setup()`, the `:Faaah` command is available with subcommands:
+
+| Command | Effect |
+|---------|--------|
+| `:Faaah enable` | Unmute all sources |
+| `:Faaah disable` | Mute all sources (remembers per-source state) |
+| `:Faaah toggle` | Flip between enabled/disabled |
+| `:Faaah play` | Manually play the default sound |
+
+Tab-completion available for subcommands. Map to keys if desired:
+
+```lua
+vim.keymap.set("n", "<leader>ft", ":Faaah toggle<CR>", { desc = "Toggle error sounds" })
+```
+
 ## Sources
 
 ### diagnostics
@@ -158,6 +194,18 @@ faaah.source("notifications"):disable()
 faaah.source("neotest"):enable()
 ```
 
+### Global Mute
+
+Disable or enable all sources at once:
+
+```lua
+faaah.disable()   -- mute all, remembers which sources were on
+faaah.enable()    -- restore previous per-source state
+faaah.is_enabled() -- true when not globally muted
+```
+
+Or use commands: `:Faaah disable`, `:Faaah enable`, `:Faaah toggle`.
+
 **Note:** Config (sound path, throttle_ms) is frozen after `setup()`. To change these values, re-run `setup()` with new options.
 
 ### Manual Sound Trigger
@@ -225,6 +273,20 @@ Or set to `0` for maximum cacophony — your choice.
 
 **neotest integration not working:**
 Verify load order: `faaah.setup()` before `neotest.setup()`. If that's impossible, call `manual_attach()` after both are loaded.
+
+**Debug logging:**
+Enable verbose logging to file to trace autocmd events, throttle decisions, and sound playback:
+
+```lua
+require("faaah").log.set_level("debug")
+```
+
+Log file is at `:echo stdpath("data") .. "/faaah.log"` (usually `~/.local/share/nvim/faaah.log`). Debug messages go to file only (no editor noise). Set back to `"info"` when done.
+
+```lua
+-- Change log file location
+require("faaah").log.set_path("~/faaah-debug.log")
+```
 
 ## License
 
