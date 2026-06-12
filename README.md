@@ -35,7 +35,7 @@ require("faaah").setup()
 With defaults, this:
 - Plays the bundled sound on new LSP diagnostic errors
 - Plays on neotest test failures (must load faaah *before* `neotest.setup()`)
-- Plays on `vim.notify(msg, vim.log.levels.ERROR)` calls
+- Notifications source is **disabled by default** (many plugins spam ERROR-level `vim.notify`)
 - Throttles to one sound every 2 seconds per source
 - Auto-detects audio backend (afplay on macOS, ffplay, or mpv)
 
@@ -57,7 +57,10 @@ require("faaah").setup({
       sound = "~/sounds/sad-trombone.mp3", -- override for this source only
       throttle_ms = 5000,                    -- 5s cooldown for tests
     },
-    notifications = { enabled = true },
+    notifications = {
+      enabled = true,  -- opt-in (disabled by default)
+      -- ignore_patterns = nil,  -- nil = built-in defaults (see below)
+    },
   },
   play_cmd = nil,  -- nil = auto-detect; string = template like "mplayer %s"
 })
@@ -92,7 +95,7 @@ Calling `require("faaah").setup()` with no arguments uses these defaults:
   sources = {
     diagnostics   = { enabled = true },
     neotest       = { enabled = true },
-    notifications = { enabled = true },
+    notifications = { enabled = false },  -- disabled: too many false positives
   },
   play_cmd = nil,  -- nil = auto-detect (afplay/ffplay/mpv)
 }
@@ -166,6 +169,32 @@ require("faaah").sources.neotest.manual_attach() -- best-effort
 Wraps `vim.notify` to intercept ERROR-level messages. The original `vim.notify` is **always** called — messages are never suppressed.
 
 **Filter:** Only `level == vim.log.levels.ERROR` (integer 1) triggers the sound.
+
+**Whitelist mode with `ignore_patterns`:**
+
+```lua
+notifications = {
+  enabled = true,
+  ignore_patterns = nil,  -- nil = use built-in defaults only
+  -- Or ADD your own on top of built-ins:
+  -- ignore_patterns = { "my noisy plugin", "another one" },
+}
+```
+
+User patterns are **additive** — they join the built-in defaults, never replace them. This keeps the base filter intact while letting you silence additional noise.
+
+Built-in defaults filter these common false positives:
+
+| Category | Patterns |
+|----------|----------|
+| LSP info | `No code actions available`, `No information available`, `No hover information`, `No signature help available` |
+| LSP lookups | `No .- found`, `No .- available`, `Not found` |
+| LSP lifecycle | `Client .- quit`, `Client .- stopped`, `Server .- failed`, `method .- not supported` |
+| Treesitter | `No parser for`, `treesitter .- error` |
+| Completion | `No completion found`, `No snippet found` |
+| Noise | blank messages, separators, `cancelled`, `aborted`, `interrupted` |
+
+Set `ignore_patterns` to `{}` to hear everything (cacophony). Set to your own list to customize.
 
 **Known false positives:**
 - LSP "No code actions available" notifications

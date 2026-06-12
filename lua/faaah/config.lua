@@ -10,7 +10,7 @@ local defaults = {
   sources = {
     diagnostics = { enabled = true },
     neotest = { enabled = true },
-    notifications = { enabled = true },
+    notifications = { enabled = false, ignore_patterns = nil },  -- nil = use built-in defaults
   },
   play_cmd = nil,
 }
