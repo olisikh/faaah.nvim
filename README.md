@@ -44,7 +44,7 @@ With defaults, this:
 ```lua
 require("faaah").setup({
   defaults = {
-    sound = nil,         -- nil = bundled default.mp3; string = path (supports ~/)
+    sound = nil,         -- nil = bundled default.mp3; string = file in plugin sounds/ or absolute path
     throttle_ms = 2000,  -- cooldown in ms; 0 = no throttle (cacophony)
   },
   sources = {
@@ -54,7 +54,7 @@ require("faaah").setup({
     },
     neotest = {
       enabled = true,
-      sound = "~/sounds/sad-trombone.mp3", -- override for this source only
+      sound = "sad-meow-song.mp3",         -- resolves to plugin's sounds/sad-meow-song.mp3
       throttle_ms = 5000,                    -- 5s cooldown for tests
     },
     notifications = {
@@ -83,6 +83,12 @@ sources = {
   -- diagnostics.throttle_ms → nil → inherits defaults.throttle_ms (2000)
 }
 ```
+
+### Sound Path Resolution
+
+- `sound = "sad-meow-song.mp3"` → resolves to this plugin's `sounds/sad-meow-song.mp3`
+- `sound = "memes/oof.mp3"` → resolves to this plugin's `sounds/memes/oof.mp3`
+- `sound = "~/sounds/custom.mp3"` or `sound = "/tmp/custom.mp3"` → treated as external absolute path
 
 ### Default Configuration
 

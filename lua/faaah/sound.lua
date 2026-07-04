@@ -5,6 +5,19 @@ local log = require("faaah.log")
 ---@type string|nil cached backend command (without %s)
 local backend = nil
 
+---@return string absolute plugin root path
+local function plugin_root()
+  local source = debug.getinfo(1, "S").source
+  local sound_lua_path = source:sub(2) -- strip leading @
+  return vim.fn.fnamemodify(sound_lua_path, ":h:h:h")
+end
+
+---@param path string
+---@return boolean
+local function is_external_path(path)
+  return path:match("^/") ~= nil or path:match("^~[/\\]") ~= nil
+end
+
 ---Auto-detect the best available audio backend.
 ---Order: afplay (macOS), ffplay, mpv
 ---@return string|nil backend name, or nil if none found
@@ -40,24 +53,25 @@ local function build_cmd(backend_name, sound_path)
 end
 
 ---Resolve the sound path to an absolute filesystem path.
----If user provides a path, expand it (handles ~/).
+---If user provides an absolute or ~/ path, expand it.
+---Otherwise, resolve it relative to the plugin's sounds/ directory.
 ---If nil, resolve the bundled default.mp3 relative to this file.
 ---@param user_path? string
 ---@return string|nil absolute path, or nil if not resolvable
 local function resolve_sound_path(user_path)
   if user_path then
-    return vim.fn.expand(user_path)
+    if is_external_path(user_path) then
+      return vim.fn.expand(user_path)
+    end
+
+    local plugin_sound_path = plugin_root() .. "/sounds/" .. user_path
+    return vim.fn.fnamemodify(plugin_sound_path, ":p")
   end
 
   -- Resolve bundled default.mp3
   -- sound.lua lives in lua/faaah/sound.lua
   -- default.mp3 is at sounds/default.mp3 relative to plugin root
-  local source = debug.getinfo(1, "S").source
-  -- source format: @/path/to/lua/faaah/sound.lua
-  local sound_lua_path = source:sub(2) -- strip leading @
-  -- Walk up: sound.lua -> faaah -> lua -> plugin_root (3 levels)
-  local plugin_root = vim.fn.fnamemodify(sound_lua_path, ":h:h:h")
-  local default_path = vim.fn.resolve(plugin_root .. "/sounds/default.mp3")
+  local default_path = vim.fn.fnamemodify(plugin_root() .. "/sounds/default.mp3", ":p")
 
   if vim.fn.filereadable(default_path) == 1 then
     return default_path
