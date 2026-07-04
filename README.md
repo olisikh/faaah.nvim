@@ -35,7 +35,7 @@ require("faaah").setup()
 With defaults, this:
 - Plays the bundled sound on new LSP diagnostic errors
 - Plays on neotest test failures (must load faaah *before* `neotest.setup()`)
-- Notifications source is **disabled by default** (many plugins spam ERROR-level `vim.notify`)
+- Notifications source is **disabled by default**, so `vim.notify` is not wrapped unless you enable it
 - Throttles to one sound every 2 seconds per source
 - Auto-detects audio backend (afplay on macOS, ffplay, or mpv)
 
@@ -59,7 +59,9 @@ require("faaah").setup({
     },
     notifications = {
       enabled = true,  -- opt-in (disabled by default)
-      -- ignore_patterns = nil,  -- nil = built-in defaults (see below)
+      ignore_patterns = {
+        "Nothing to rename", -- additive: built-in ignores still apply
+      },
     },
   },
   play_cmd = nil,  -- nil = auto-detect; string = template like "mplayer %s"
@@ -95,7 +97,7 @@ Calling `require("faaah").setup()` with no arguments uses these defaults:
   sources = {
     diagnostics   = { enabled = true },
     neotest       = { enabled = true },
-    notifications = { enabled = false },  -- disabled: too many false positives
+    notifications = { enabled = false },  -- disabled: `vim.notify` stays untouched until enabled
   },
   play_cmd = nil,  -- nil = auto-detect (afplay/ffplay/mpv)
 }
@@ -170,18 +172,21 @@ Wraps `vim.notify` to intercept ERROR-level messages. The original `vim.notify` 
 
 **Filter:** Only `level == vim.log.levels.ERROR` (integer 1) triggers the sound.
 
-**Whitelist mode with `ignore_patterns`:**
+**Default state:** Disabled by default, because `vim.notify` is global and noisy.
+
+**Add extra ignores with `ignore_patterns`:**
 
 ```lua
 notifications = {
   enabled = true,
-  ignore_patterns = nil,  -- nil = use built-in defaults only
-  -- Or ADD your own on top of built-ins:
-  -- ignore_patterns = { "my noisy plugin", "another one" },
+  ignore_patterns = {
+    "Nothing to rename",
+    "my noisy plugin",
+  },
 }
 ```
 
-User patterns are **additive** — they join the built-in defaults, never replace them. This keeps the base filter intact while letting you silence additional noise.
+User patterns are **additive** — they join the built-in defaults, never replace them. Omit `ignore_patterns` (or use `{}`) to keep only the built-in ignore list.
 
 Built-in defaults filter these common false positives:
 
@@ -194,14 +199,12 @@ Built-in defaults filter these common false positives:
 | Completion | `No completion found`, `No snippet found` |
 | Noise | blank messages, separators, `cancelled`, `aborted`, `interrupted` |
 
-Set `ignore_patterns` to `{}` to hear everything (cacophony). Set to your own list to customize.
-
 **Known false positives:**
 - LSP "No code actions available" notifications
 - Plugin messages that use ERROR level for non-critical info
 - Any plugin that calls `vim.notify(msg, vim.log.levels.ERROR)`
 
-Throttle mitigates this. v2 may add `ignore_patterns` for regex filtering.
+Built-in ignores and `ignore_patterns` mitigate this. Matching uses Lua patterns.
 
 **Edge cases:**
 - If another plugin also wraps `vim.notify`, load order matters. faaah wraps at setup time; later wrappers will wrap faaah's wrapper. The chain always preserves the original.
@@ -281,7 +284,7 @@ Playback is always **asynchronous and non-blocking**. Overlapping sounds are all
 | Load order requirement | faaah before neotest | Documented; `manual_attach()` as escape hatch |
 | Sound overlap | Allowed (no kill) | Intentional — cacophony is the point |
 | Cross-platform audio | Auto-detect + config override | macOS/Linux; user supplies `play_cmd` if needed |
-| False positives in notifications | Accept, mitigate with throttle | `vim.notify` is broad; cannot filter by origin in v1 |
+| False positives in notifications | Disabled by default + ignore known noisy messages | `vim.notify` is broad; Lua-pattern ignores are flexible and predictable |
 | Config mutability | Frozen after `setup()` | Simpler reasoning; re-run `setup()` to change settings |
 
 ## Troubleshooting

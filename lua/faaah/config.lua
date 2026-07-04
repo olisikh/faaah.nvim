@@ -10,7 +10,7 @@ local defaults = {
   sources = {
     diagnostics = { enabled = true },
     neotest = { enabled = true },
-    notifications = { enabled = false, ignore_patterns = nil },  -- nil = use built-in defaults
+    notifications = { enabled = false },
   },
   play_cmd = nil,
 }
@@ -49,6 +49,16 @@ local function validate(opts)
     end
     if src_opts.enabled ~= nil and type(src_opts.enabled) ~= "boolean" then
       return "faaah.setup: sources." .. name .. ".enabled must be a boolean"
+    end
+    if src_opts.ignore_patterns ~= nil then
+      if type(src_opts.ignore_patterns) ~= "table" then
+        return "faaah.setup: sources." .. name .. ".ignore_patterns must be a table"
+      end
+      for i, pattern in ipairs(src_opts.ignore_patterns) do
+        if type(pattern) ~= "string" then
+          return "faaah.setup: sources." .. name .. ".ignore_patterns[" .. i .. "] must be a string"
+        end
+      end
     end
   end
 
