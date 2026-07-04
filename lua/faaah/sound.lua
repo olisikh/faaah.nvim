@@ -5,6 +5,9 @@ local log = require("faaah.log")
 ---@type string|nil cached backend command (without %s)
 local backend = nil
 
+---@type string|nil runtime sound override applied to every play() call
+local runtime_sound = nil
+
 ---@return string absolute plugin root path
 local function plugin_root()
   local source = debug.getinfo(1, "S").source
@@ -81,7 +84,41 @@ local function resolve_sound_path(user_path)
   return nil
 end
 
+---Return the bundled sound filenames available for completion.
+---@return string[]
+function M.list_sounds()
+  local dir = plugin_root() .. "/sounds"
+  local ok, entries = pcall(vim.fn.readdir, dir)
+  if not ok or not entries then
+    return {}
+  end
+
+  return vim.tbl_filter(function(name)
+    local full = dir .. "/" .. name
+    return vim.fn.isdirectory(full) == 0
+  end, entries)
+end
+
+---Set a runtime sound override.
+---Takes precedence over configured and per-source sounds until cleared.
+---@param name_or_path string bundled name (e.g. "oof.mp3") or absolute/~/ path
+function M.set_runtime_sound(name_or_path)
+  runtime_sound = name_or_path
+end
+
+---Get the current runtime sound override, if any.
+---@return string|nil
+function M.get_runtime_sound()
+  return runtime_sound
+end
+
+---Clear any runtime sound override.
+function M.clear_runtime_sound()
+  runtime_sound = nil
+end
+
 ---Play a sound file asynchronously.
+---If a runtime override is set, it takes precedence over `path`.
 ---@param path string absolute path to sound file
 ---@param play_cmd? string user override for play command template
 ---@return boolean true if spawned successfully
@@ -94,9 +131,10 @@ function M.play(path, play_cmd)
     end
   end
 
-  local resolved = resolve_sound_path(path)
+  local active_path = runtime_sound or path
+  local resolved = resolve_sound_path(active_path)
   if not resolved then
-    log.warn("could not resolve sound path" .. (path and (" for: " .. path) or ""))
+    log.warn("could not resolve sound path" .. (active_path and (" for: " .. active_path) or ""))
     return false
   end
 

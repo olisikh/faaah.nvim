@@ -52,7 +52,13 @@ function M.setup(user_opts)
 
   -- Register user commands
   local function faaah_cmd(args)
-    local sub = args.args
+    local parts = vim.split(vim.trim(args.args), "%s+")
+    local sub = parts[1] or ""
+    if sub == "" then
+      return
+    end
+    local sub_arg = parts[2]
+
     if sub == "enable" then
       M.enable()
     elseif sub == "disable" then
@@ -65,17 +71,42 @@ function M.setup(user_opts)
       end
     elseif sub == "play" then
       M.play()
+    elseif sub == "sound" then
+      if sub_arg then
+        M.set_sound(sub_arg)
+      else
+        local runtime = sound.get_runtime_sound()
+        if runtime then
+          log.info("runtime sound: " .. runtime)
+        else
+          log.info("runtime sound: using configured/default sound")
+        end
+      end
     else
-      log.warn("unknown command: " .. tostring(sub) .. ". Valid: enable, disable, toggle, play")
+      log.warn("unknown command: " .. tostring(sub) .. ". Valid: enable, disable, toggle, play, sound")
     end
   end
 
   vim.api.nvim_create_user_command("Faaah", faaah_cmd, {
     nargs = "?",
-    complete = function()
-      return { "enable", "disable", "toggle", "play" }
+    complete = function(arg_lead, cmd_line, cursor_pos)
+      local subcommands = { "enable", "disable", "toggle", "play", "sound" }
+      local before = cmd_line:sub(1, cursor_pos)
+      local tail = before:match("^%S+%s+(.*)$") or ""
+
+      if tail:match("^sound%s+") then
+        local prefix = vim.trim(tail:gsub("^sound%s+", ""))
+        return vim.tbl_filter(function(name)
+          return vim.startswith(name, prefix)
+        end, sound.list_sounds())
+      end
+
+      local lead = vim.trim(tail)
+      return vim.tbl_filter(function(cmd)
+        return vim.startswith(cmd, lead)
+      end, subcommands)
     end,
-    desc = "faaah.nvim: control error sounds (enable/disable/toggle/play)",
+    desc = "faaah.nvim: control error sounds (enable/disable/toggle/play/sound)",
     force = true,
   })
 end
@@ -153,6 +184,7 @@ M.log = log
 
 ---Play a sound manually.
 ---Uses the configured play_cmd from setup() if set, otherwise auto-detect.
+---If a runtime sound override is active, it takes precedence.
 ---@param path? string absolute or ~ path to sound file; nil = use configured default
 function M.play(path)
   local resolved_path = path
@@ -169,6 +201,14 @@ function M.play(path)
 
   local play_cmd = _config and _config.play_cmd or nil
   sound.play(resolved_path, play_cmd)
+end
+
+---Change the runtime sound used by every source.
+---Accepts a bundled filename (e.g. "oof.mp3") or an absolute/~ path.
+---@param name_or_path string
+function M.set_sound(name_or_path)
+  sound.set_runtime_sound(name_or_path)
+  log.info("runtime sound set to: " .. name_or_path)
 end
 
 return M

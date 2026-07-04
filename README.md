@@ -119,8 +119,10 @@ After `setup()`, the `:Faaah` command is available with subcommands:
 | `:Faaah disable` | Mute all sources (remembers per-source state) |
 | `:Faaah toggle` | Flip between enabled/disabled |
 | `:Faaah play` | Manually play the default sound |
+| `:Faaah sound <name>` | Change the runtime sound |
+| `:Faaah sound` | Show the current runtime sound, if any |
 
-Tab-completion available for subcommands. Map to keys if desired:
+Tab-completion available for subcommands and for bundled sound names after `:Faaah sound `. Map to keys if desired:
 
 ```lua
 vim.keymap.set("n", "<leader>ft", ":Faaah toggle<CR>", { desc = "Toggle error sounds" })
@@ -244,7 +246,7 @@ faaah.is_enabled() -- true when not globally muted
 
 Or use commands: `:Faaah disable`, `:Faaah enable`, `:Faaah toggle`.
 
-**Note:** Config (sound path, throttle_ms) is frozen after `setup()`. To change these values, re-run `setup()` with new options.
+**Note:** Config (sound path, throttle_ms) is frozen after `setup()`. To change these values, re-run `setup()` with new options. The runtime sound is an exception: it can be changed on the fly without re-running setup.
 
 ### Manual Sound Trigger
 
@@ -254,6 +256,9 @@ require("faaah").play()
 
 -- Play a specific file
 require("faaah").play("~/sounds/ohno.mp3")
+
+-- Change the runtime sound used by every source
+require("faaah").set_sound("oof.mp3")
 ```
 
 ## Audio Backends
