@@ -54,7 +54,7 @@ require("faaah").setup({
     },
     neotest = {
       enabled = true,
-      sound = "sad-meow-song.mp3",         -- resolves to plugin's sounds/sad-meow-song.mp3
+      sound = "fart.mp3",                    -- resolves to plugin's sounds/fart.mp3
       throttle_ms = 5000,                    -- 5s cooldown for tests
     },
     notifications = {
@@ -86,7 +86,7 @@ sources = {
 
 ### Sound Path Resolution
 
-- `sound = "sad-meow-song.mp3"` → resolves to this plugin's `sounds/sad-meow-song.mp3`
+- `sound = "fart.mp3"` → resolves to this plugin's `sounds/fart.mp3`
 - `sound = "memes/oof.mp3"` → resolves to this plugin's `sounds/memes/oof.mp3`
 - `sound = "~/sounds/custom.mp3"` or `sound = "/tmp/custom.mp3"` → treated as external absolute path
 
